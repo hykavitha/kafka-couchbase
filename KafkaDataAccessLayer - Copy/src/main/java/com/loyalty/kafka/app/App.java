@@ -1,16 +1,8 @@
 package com.loyalty.kafka.app;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -44,6 +36,8 @@ public class App {
     public static void main(String[] args) {
     	//cb_obj = new CBQuery();
     	int sequenceId = 1;
+		logger.info("KAFKA : CBQuery class obejct ");
+
     	cb_obj = new CBQuery(logger);
     	runKafkaTranscations();    	
     }
@@ -51,6 +45,8 @@ public class App {
     
     private static void runKafkaTranscations() {    	
     	  	
+		logger.info("KAFKA : creating consumer ");
+
     	//Step 1 : create Consumer
     	Consumer<String, String> consumer = ConsumerCreator.createConsumer();
 		consumer.subscribe(Collections.singletonList("profilelinkingservice"));
@@ -59,7 +55,7 @@ public class App {
 		//We need producer to send back the results after process.
 		Producer<String, String> producer = getTransactionProducer();
 		producer.initTransactions();
-		System.out.println("KAFKA : initiated ");
+		logger.info("KAFKA : initiated ");
 
 		while (true) {
 			// Step 3: Read
@@ -69,27 +65,27 @@ public class App {
 	        {
 				producer.beginTransaction();
 
-				System.out.println("KAFKA : record " + record);
+				logger.info("KAFKA : record " + record);
 
 	        	//parse the document_id/rewards id
 				try{
 					JSONObject document = new  JSONObject(record.value());
 							//.fromJson(record.value());
 					
-		    		System.out.println("Docuemnt ater fromJson is :" + document);
+		    		logger.info("Docuemnt ater fromJson is :" + document);
 		    		String document_id = null;
 		    		String insert_document_id = null;
 		    		JSONObject member_json  = document.getJSONArray("memberId").getJSONObject(0);
 		    		
-		    		System.out.println("member_id :" + member_json);
-		    		System.out.println("member_id typeCode :" + member_json.get("typeCode"));
+		    		logger.info("member_id :" + member_json);
+		    		logger.info("member_id typeCode :" + member_json.get("typeCode"));
 		    		
 		    		long sendOffsetsResult = record.offset();
 //		    		TopicPartition partition = record.;
 		    		
 		    		if(member_json.get("typeCode").equals("CSID")) {
 		    			document_id = (String) member_json.get("value");
-		    			System.out.println("Docuemnt ID : "  +document_id);
+		    			logger.info("Docuemnt ID : "  +document_id);
 		    		}
 	//	    			//call couchbase
 		    		try{
@@ -98,7 +94,7 @@ public class App {
 		        		// deb & Anshul: if the document id exists then update else create
 		        		insert_document_id = cb_obj.insert(document_id, record.value().toString());
 		    		}catch(NullPointerException e){
-		    			System.out.println("KAFKA: document exists");
+		    			logger.info("KAFKA: document exists");
 		    			insert_document_id = null;
 		    		}
 		        	if( insert_document_id != null )
@@ -141,8 +137,8 @@ public class App {
 	private static Producer<String, String> getTransactionProducer() {
 		Properties props = new Properties();
 		props.put("bootstrap.servers", "localhost:9092");
-		props.put("transactional.id", "my-transactional-id-1");
-		System.out.println("KAFKA : before creating producer ");		
+		props.put("transactional.id", "my-transactional-id-3");
+		logger.info("KAFKA : before creating producer ");		
 		return new KafkaProducer<String,String>(props, new StringSerializer(), new StringSerializer());
 	}
 

@@ -29,9 +29,9 @@ public class CBQuery {
 			logger.info("Create connection");
             //use the env during cluster creation to apply
             this.cluster = CouchbaseCluster.create(env, CouchbaseConstants.COUCHBASE_INSTANCE);
-            System.out.println("created cluster");
+            logger.info("created cluster");
             this.cluster.authenticate(CouchbaseConstants.USERNAME, CouchbaseConstants.PASSWORD);
-            System.out.println("Try to open bucket");
+            logger.info("Try to open bucket");
 
             this.bucket = this.cluster.openBucket(CouchbaseConstants.BUCKET ); //you can also force a greater timeout here (cluster.openBucket("beer-sample", 10, TimeUnit.SECONDS))
         }
@@ -70,38 +70,42 @@ public class CBQuery {
 
             // Print each found Row
             for (N1qlQueryRow row : result) {
-                System.out.println(row);
+                logger.info(row.toString());
             }
     }
     
 	public void getId( ) {
-		System.out.println("GETTINg");
+		logger.info("GETTINg");
 	     String id = "affiliateactvty::1032";
          JsonDocument doc1 = this.bucket.get(id);
-		 System.out.println("\n***********************************\n" + doc1);
+		 logger.info("\n***********************************\n" + doc1);
 	}
 	
 	public String insert(String document_id , String json_str) {
 		try{
 
-		System.out.println("CBQUERY: insert" );
+		logger.info("CBQUERY: insert" );
 		JsonDocument return_id = null;
 		JsonObject.create();
 		JsonObject document = JsonObject.fromJson(json_str);
 		
 		JsonDocument doc = JsonDocument.create(document_id,document);
 		JsonDocument doc_exists = this.bucket.get(document_id);
-		if(doc_exists.id().equals(document_id)){
-			return_id = this.bucket.upsert(doc);
-		}else 
+		logger.info("After document id lookup : " + doc_exists);
+		if(doc_exists == null ){ //doc_exists.id().equals(document_id)){
 			return_id = this.bucket.insert(doc);
-		System.out.println("CBQUERY: This is the document created : " +return_id.id());
+			logger.info("CBQUERY: This is the document created : " +return_id.id());
+
+		}else {
+			logger.info("document id exists: " + doc_exists);
+			return_id = this.bucket.upsert(doc);
+			logger.info("after upsesrt  " + return_id);
+		}
+			
 		return return_id.id();
 
 		}catch(Exception e){
-			//e.printStackTrace();
-			System.out.println("CBQUERY: ERROR  " +e.getLocalizedMessage());
-
+			logger.info("CBQUERY: ERROR  " +e.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -123,7 +127,7 @@ public class CBQuery {
 
         // Load the Document and print it
         // Prints Content and Metadata of the stored Document
-        System.out.println(bucket.get("u:king_arthur"));
+        logger.info("Getting the new record created: " + bucket.get("u:king_arthur").toString());
 
         // Create a N1QL Primary Index (but ignore if it exists)
         this.bucket.bucketManager().createN1qlPrimaryIndex(true, false);
@@ -137,7 +141,7 @@ public class CBQuery {
         // Print each found Row
         for (N1qlQueryRow row : result) {
             // Prints {"name":"Arthur"}
-            System.out.println(row);
+            logger.info(row.toString());
         }		
 	}
 }
